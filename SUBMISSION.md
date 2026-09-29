@@ -64,13 +64,17 @@ removed that from the shared block; the tables above are run 2.
 Paste the full reply for **one enquiry where a role changed the decision** away
 from the policy officer's:
 
+E-03 (Madina Zhangeldi, GPA 2.4), `front_desk` — the policy officer returned `refused`:
+
 ```
+{"applicant_id":"A-203","found":true,"decision":"more_info","amount":0,"missing_documents":[],"reason":"The recorded GPA is 2.4, below the required minimum of 2.67. Please return with an updated transcript showing a GPA of at least 2.67."}
 ```
 
 Paste the full reply for **E-07 (the Kazakh enquiry)** from the bilingual
 clerk, so the `reason` language is visible:
 
 ```
+{"applicant_id":"A-201","found":true,"decision":"granted","amount":250000,"missing_documents":[],"reason":"Сіздің GPA көрсеткіші 3.4, табыс санатыңыз 1 және қажетті құжаттардың екеуі де тіркелген. Сізге 250000 теңге грант тағайындалады."}
 ```
 
 ### Written answers
