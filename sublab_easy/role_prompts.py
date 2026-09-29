@@ -120,10 +120,12 @@ and nothing else - no markdown, no code fence, no text before or after it:
   "reason": "<one or two sentences for a human>"
 }}
 
-Meaning of decision:
-- granted: on record, GPA and income band qualify, both documents on file.
-- refused: on record, but GPA or income band disqualifies them.
-- more_info: on record, GPA and band qualify, but a required document is missing.
+What each decision value means (which one to give is decided by YOUR ROLE,
+described at the top of this message):
+- granted: the office awards the grant now.
+- refused: the office turns the application down.
+- more_info: the office does not decide yet; the applicant or the office needs
+  something first (say what in reason; list missing documents).
 - not_found: nobody on the record matches; found is false.
 """
     return ROLE_TEXT[role].strip() + "\n" + shared
@@ -279,6 +281,8 @@ def main():
     ap.add_argument("--plain", action="store_true",
                     help="do not request JSON mode; rely on the prompt alone")
     ap.add_argument("--model", default=MODEL)
+    ap.add_argument("--out", default="easy_results.json",
+                    help="file name under outputs/ for the raw replies")
     args = ap.parse_args()
 
     load_dotenv(ROOT / ".env")
@@ -317,7 +321,7 @@ def main():
     print(f"\nTokens used: prompt {tokens['prompt']}, completion {tokens['completion']}")
 
     OUT.mkdir(exist_ok=True)
-    out = OUT / "easy_results.json"
+    out = OUT / args.out
     out.write_text(json.dumps({
         "model": args.model,
         "json_mode": not args.plain,
