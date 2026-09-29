@@ -213,12 +213,12 @@ notice.
 
 | Story | Parsed? | Valid? | Fields that came back `null` | Traps hit |
 |---|---|---|---|---|
-| story-01 | | | | |
-| story-02 | | | | |
-| story-03 | | | | |
-| story-04 | | | | |
-| story-05 | | | | |
-| story-06 | | | | |
+| story-01 | yes | yes | none | none — GPA already on 4.0 (3.8), 2 published, 8 months |
+| story-02 | yes | yes | graduation_year, gpa_4_scale, gpa_original, gpa_original_scale, experience_months_countable | no GPA stated → null (not inferred from “distinction”); 36 months with no calendar dates → not countable; paper in “student conference proceedings” not stated as peer-reviewed → model counted 0, my code's recount gives 1 (flagged) |
+| story-03 | yes | yes | none | GPA on another scale: 4.6/5.0 → 3.68 on 4.0; paper under review → not counted |
+| story-04 | yes | yes | none | not published: 1 under review + 2 in preparation → not counted (1 published) |
+| story-05 | yes | yes | none | story in Kazakh; paper “not yet sent anywhere” → in preparation, not counted |
+| story-06 | yes | yes | graduation_year, gpa_4_scale, gpa_original, gpa_original_scale | contradiction ×2 → null + recorded: GPA 3.2 vs 3.5; graduated 2024 vs graduating 2026; poster → not counted |
 
 The four traps, for reference: no GPA stated · a GPA on another scale · a paper
 that is not published · a story that contradicts itself.
@@ -226,25 +226,88 @@ that is not published · a story that contradicts itself.
 Paste the extraction for **story-06**, the one that contradicts itself:
 
 ```json
+{
+  "candidate_id": "story-06",
+  "full_name": "Nurzhan Abilov",
+  "story_language": "English",
+  "degree": "BSc in Statistics",
+  "graduation_year": null,
+  "gpa_4_scale": null,
+  "gpa_original": null,
+  "gpa_original_scale": null,
+  "languages": [
+    "Kazakh",
+    "Russian",
+    "English"
+  ],
+  "published_outputs": [
+    {
+      "title_or_topic": "Survey weighting",
+      "venue": "Peer-reviewed proceedings",
+      "year": null,
+      "status": "published",
+      "peer_reviewed": true,
+      "evidence": "one paper published, in a peer-reviewed proceedings, on survey weighting"
+    }
+  ],
+  "published_peer_reviewed_count": 1,
+  "unpublished_outputs": [
+    {
+      "title_or_topic": "Poster at a local event",
+      "status": "poster",
+      "evidence": "One poster at a local event, which I do not think counts."
+    }
+  ],
+  "experience_periods": [
+    {
+      "role": "Insurance analytics team member",
+      "start": "February 2023",
+      "end": null,
+      "months_stated": 40,
+      "relevant": true,
+      "countable": true,
+      "note": "The story states about forty months; the first eight months were part-time and the remainder full-time.",
+      "evidence": "I have been at an insurance analytics team since February 2023, which is about forty months. I was part-time for the first eight of those while I was still studying, then full-time."
+    }
+  ],
+  "experience_months_countable": 40,
+  "ambiguities": [
+    "The GPA is contradictory: \"My GPA was 3.2\" and \"I think it was 3.5\"; therefore no GPA value or scale is selected.",
+    "The graduation information is contradictory: \"I graduated in 2024 with a BSc in Statistics\" and \"I am currently a final-year student graduating in 2026\"; therefore graduation_year is null."
+  ],
+  "evidence": {
+    "full_name": "Nurzhan Abilov",
+    "degree": "I graduated in 2024 with a BSc in Statistics.",
+    "graduation_year": null,
+    "gpa": "My GPA was 3.2. Actually I should double-check that, I think it was 3.5",
+    "languages": "Languages: Kazakh, Russian, English.",
+    "experience_months_countable": "which is about forty months"
+  }
+}
 ```
 
 ### Part 2 — scores and the winner
 
 | Candidate | academic (0–5) | research (0–5) | experience (0–5) | weighted total (code) |
 |---|---|---|---|---|
-| story-01 | | | | |
-| story-02 | | | | |
-| story-03 | | | | |
-| story-04 | | | | |
-| story-05 | | | | |
-| story-06 | | | | |
+| story-01 | 5 | 5 | 2 | 4.40 |
+| story-02 | 0 | 1 | 0 | 0.30 |
+| story-03 | 4 | 3 | 3 | 3.50 |
+| story-04 | 4 | 3 | 5 | 3.90 |
+| story-05 | 5 | 3 | 2 | 3.80 |
+| story-06 | 1 | 3 | 5 | 2.40 |
 
-**Winner, computed by my code:**
+**Winner, computed by my code:** story-01 (Aziza Bekova), 4.40.
+Ranking: story-01 4.40 > story-04 3.90 > story-05 3.80 > story-03 3.50 > story-06 2.40 > story-02 0.30. Gap #1–#2: 0.50; gap #2–#3: 0.10.
+Total = 0.5·academic + 0.3·research + 0.2·experience, computed in Python from the three integer fields.
 
 **The model's prose answer, asked separately ("who should win?"):**
 
+> Aziza Bekova should win the scholarship. She has the strongest overall record: a 3.8/4.0 GPA, two published peer-reviewed papers, and eight months of relevant data work. Her limited experience is her main weakness, but the rubric gives academic record the greatest weight and research the second greatest; her perfect or near-perfect performance in those areas outweighs the shorter work history. Her weighted score is approximately **4.33/5**.
 >
-```
+> The runner-up should be **Lyazzat Omarova**. Her 4.6/5.0 GPA converts to approximately 3.68/4.0, just below the rubric’s 3.7 threshold for the top academic score. She has one published peer-reviewed paper, a further paper under review that cannot be counted, and fourteen months of clearly dated relevant internships. Her record is well balanced, but she falls behind Aziza because she has only one published output and a slightly weaker converted academic result.
+>
+> Tamerlan Saparov is close behind, with two years of relevant experience but only one published paper and a 3.6/4.0 GPA. The other candidates either lack a usable GPA, have less research output, or have substantially less relevant experience.
 
 ### Part 3 — written answers
 
