@@ -1,15 +1,3 @@
-"""Sublab Easy - one task, four roles.
-
-Runs the same ten enquiries through the same model four times. The only thing
-that changes between the four runs is the ROLE paragraph at the top of the
-system message; the records, the rule and the JSON shape are identical.
-
-    python -m sublab_easy.role_prompts
-    python -m sublab_easy.role_prompts --plain      # without JSON mode
-
-Prints the per-role tables and the field-movement table in Markdown, ready to
-paste into SUBMISSION.md, and writes every raw reply to outputs/easy_results.json.
-"""
 from __future__ import annotations
 
 import argparse
@@ -31,9 +19,6 @@ MODEL = "gpt-5.6-luna"
 ROLES = ["policy_officer", "front_desk", "auditor", "bilingual_clerk"]
 FIELDS = ["found", "decision", "amount", "missing_documents"]
 
-# --------------------------------------------------------------------------
-# The four role paragraphs. This is the ONLY text that differs between runs.
-# --------------------------------------------------------------------------
 ROLE_TEXT = {
     "policy_officer": (
         "You are the POLICY OFFICER of the grant office. You apply the rule "
@@ -67,9 +52,6 @@ ROLE_TEXT = {
     ),
 }
 
-# --------------------------------------------------------------------------
-# The JSON contract, as a schema the program checks.
-# --------------------------------------------------------------------------
 CONTRACT_SCHEMA = {
     "type": "object",
     "properties": {
@@ -96,7 +78,6 @@ def load(name: str):
 
 
 def build_system_prompt(role: str, records, policy) -> str:
-    """Role paragraph first, then the part that is identical for every role."""
     shared = f"""
 ## The rule
 {policy['rule_human']}
@@ -131,9 +112,6 @@ described at the top of this message):
     return ROLE_TEXT[role].strip() + "\n" + shared
 
 
-# --------------------------------------------------------------------------
-# Model call
-# --------------------------------------------------------------------------
 def call_model(client: OpenAI, model: str, system: str, user: str, json_mode: bool):
     kwargs = dict(model=model, messages=[
         {"role": "system", "content": system},
@@ -146,7 +124,6 @@ def call_model(client: OpenAI, model: str, system: str, user: str, json_mode: bo
     except BadRequestError:
         if not json_mode:
             raise
-        # Some models reject response_format; fall back to prompt-only JSON.
         kwargs.pop("response_format")
         resp = client.chat.completions.create(**kwargs)
     usage = resp.usage
@@ -156,11 +133,7 @@ def call_model(client: OpenAI, model: str, system: str, user: str, json_mode: bo
     )
 
 
-# --------------------------------------------------------------------------
-# Checking
-# --------------------------------------------------------------------------
 def norm(field, value):
-    """Compare missing_documents as a set, everything else as-is."""
     if field == "missing_documents" and isinstance(value, list):
         return sorted(set(value))
     return value
@@ -200,9 +173,6 @@ def check(reply: str, expected: dict) -> dict:
     return row
 
 
-# --------------------------------------------------------------------------
-# Printing
-# --------------------------------------------------------------------------
 def fmt(v):
     if isinstance(v, list):
         return "[" + ", ".join(map(str, v)) + "]"
@@ -243,7 +213,6 @@ def print_summary_table(enquiries, results):
 
 
 def field_movement(enquiries, results):
-    """For each field: which enquiries moved away from policy_officer, under which roles."""
     moves = {f: [] for f in FIELDS}
     for enq in enquiries:
         base = results["policy_officer"][enq["id"]]["obj"]
@@ -312,7 +281,6 @@ def main():
     for role in ROLES:
         print_role_table(role, enquiries, results)
 
-    # Schema errors, if any, so they are not hidden behind a "NO".
     for role in ROLES:
         for eid, r in results[role].items():
             if r["schema_errors"] or not r["parsed"]:

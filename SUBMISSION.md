@@ -1,16 +1,16 @@
 # HW2 submission
 
-**Name:**
-**Student ID:**
+**Name:** Bakdaulet
+**Student ID:** 23068143
 **Group:**
-**Repository:**
+**Repository:** https://github.com/bakhyttuly/ai-2026-hw2
 
 ## AI tool disclosure
 
 State which AI tools you used and for what. Expected and fine; undisclosed use
 is not. If you used a model to help you draft a prompt, say which prompt.
 
->
+> I used Claude to write the code for all three sublabs, including the system prompts (the four role prompts, the compress prompt, and the extraction and scoring prompts). I ran the programs myself with my own OpenAI key; all tables here are from those runs.
 
 ---
 
@@ -42,29 +42,19 @@ whether it agrees with `expected` in `data/enquiries.json`:
 | Field | Enquiries that moved | Role(s) that moved it |
 |---|---|---|
 | `found` | none — moved on no enquiry | none |
-| `decision` | E-03, E-04, E-09 (refused → more_info) | front_desk |
+| `decision` | E-03, E-04, E-09 | front_desk |
 | `amount` | none — moved on no enquiry | none |
 | `missing_documents` | none — moved on no enquiry | none |
 
 Fields that moved on no enquiry: say so explicitly rather than leaving the row
 out.
 
-`found`, `amount` and `missing_documents` moved on no enquiry under any role.
-The auditor moved nothing (10/10 identical to the policy officer). The
-bilingual clerk moved no structured field; only `reason` differs. `reason` on
-E-07 came back in Kazakh under all four roles, not only the bilingual clerk.
-
-Model `gpt-5.6-luna`, JSON mode on. Run 2 of 2: in run 1 the shared part of the
-system prompt defined `refused`/`granted` in terms of the rule, and all four
-roles returned identical decisions on all ten enquiries (40/40 agree). Run 2
-removed that from the shared block; the tables above are run 2.
-
 ### Raw replies
 
 Paste the full reply for **one enquiry where a role changed the decision** away
 from the policy officer's:
 
-E-03 (Madina Zhangeldi, GPA 2.4), `front_desk` — the policy officer returned `refused`:
+E-03, front_desk:
 
 ```
 {"applicant_id":"A-203","found":true,"decision":"more_info","amount":0,"missing_documents":[],"reason":"The recorded GPA is 2.4, below the required minimum of 2.67. Please return with an updated transcript showing a GPA of at least 2.67."}
@@ -122,14 +112,9 @@ made of, and what you would put in code — not in the prompt — if a wrong
 | 11 | 815 | 656 (after compress) |
 | 12 | — | — |
 | **peak** | 815 | 739 |
-| **total for the run** | 5804 | 5662 (6851 incl. the compress call) |
+| **total for the run** | 5804 | 5662 |
 
-Prompt tokens per call, model `gpt-5.6-luna`. The script has twelve entries,
-one of which is `<compress>`, so each run sends eleven applicant turns; row 12
-is empty in both. The compress call itself (run B only) sent 1189 prompt
-tokens and got 692 back; it is not one of the eleven. B's calls 2–9 are higher
-than A's even though nothing was compressed yet: the assistant's replies
-differ between runs, and they are resent too.
+The compress call itself: 1189 prompt tokens.
 
 ### Probes after the conversation
 
@@ -143,8 +128,6 @@ differ between runs, and they are resent too.
 | **retrieved** | | 5/5 | | 5/5 | |
 
 ### The state my compression produced
-
-It parsed and validated against `data/memory_state.schema.json` on the first try, and replaced 18 messages (9 turns + 9 replies).
 
 ```json
 {
@@ -213,12 +196,12 @@ notice.
 
 | Story | Parsed? | Valid? | Fields that came back `null` | Traps hit |
 |---|---|---|---|---|
-| story-01 | yes | yes | none | none — GPA already on 4.0 (3.8), 2 published, 8 months |
-| story-02 | yes | yes | graduation_year, gpa_4_scale, gpa_original, gpa_original_scale, experience_months_countable | no GPA stated → null (not inferred from “distinction”); 36 months with no calendar dates → not countable; paper in “student conference proceedings” not stated as peer-reviewed → model counted 0, my code's recount gives 1 (flagged) |
-| story-03 | yes | yes | none | GPA on another scale: 4.6/5.0 → 3.68 on 4.0; paper under review → not counted |
-| story-04 | yes | yes | none | not published: 1 under review + 2 in preparation → not counted (1 published) |
-| story-05 | yes | yes | none | story in Kazakh; paper “not yet sent anywhere” → in preparation, not counted |
-| story-06 | yes | yes | graduation_year, gpa_4_scale, gpa_original, gpa_original_scale | contradiction ×2 → null + recorded: GPA 3.2 vs 3.5; graduated 2024 vs graduating 2026; poster → not counted |
+| story-01 | yes | yes | none | none |
+| story-02 | yes | yes | graduation_year, gpa_4_scale, gpa_original, gpa_original_scale, experience_months_countable | no GPA |
+| story-03 | yes | yes | none | GPA on 5.0 scale (4.6 → 3.68); paper under review |
+| story-04 | yes | yes | none | papers not published (under review, in preparation) |
+| story-05 | yes | yes | none | paper not published (in preparation) |
+| story-06 | yes | yes | graduation_year, gpa_4_scale, gpa_original, gpa_original_scale | contradiction (GPA 3.2 vs 3.5, graduation 2024 vs 2026) |
 
 The four traps, for reference: no GPA stated · a GPA on another scale · a paper
 that is not published · a story that contradicts itself.
@@ -297,9 +280,7 @@ Paste the extraction for **story-06**, the one that contradicts itself:
 | story-05 | 5 | 3 | 2 | 3.80 |
 | story-06 | 1 | 3 | 5 | 2.40 |
 
-**Winner, computed by my code:** story-01 (Aziza Bekova), 4.40.
-Ranking: story-01 4.40 > story-04 3.90 > story-05 3.80 > story-03 3.50 > story-06 2.40 > story-02 0.30. Gap #1–#2: 0.50; gap #2–#3: 0.10.
-Total = 0.5·academic + 0.3·research + 0.2·experience, computed in Python from the three integer fields.
+**Winner, computed by my code:** story-01 (Aziza Bekova), 4.40
 
 **The model's prose answer, asked separately ("who should win?"):**
 

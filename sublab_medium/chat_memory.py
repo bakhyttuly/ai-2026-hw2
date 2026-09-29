@@ -1,20 +1,3 @@
-"""Sublab Medium - memory you choose: the `compress` command.
-
-Scripted comparison (both runs send the same twelve turns, then five probes):
-
-    python -m sublab_medium.chat_memory
-
-A real chat, where you can type `compress`, `tokens`, `state`, `history`, `quit`:
-
-    python -m sublab_medium.chat_memory --interactive
-
-What is sent on each call:
-  * uncompressed: system message + every turn so far (grows forever)
-  * compressed:   system message + the validated state object + the turns
-                  since the last compression
-If the summary does not parse or does not validate against
-data/memory_state.schema.json, the history is KEPT and the program says so.
-"""
 from __future__ import annotations
 
 import argparse
@@ -44,10 +27,6 @@ STATE_SCHEMA = load("memory_state.schema.json")
 STATE_VALIDATOR = Draft202012Validator(STATE_SCHEMA)
 POLICY = load("policy.json")
 
-# The assistant knows the RULE (so it can say what band 2 is worth), but it is
-# deliberately NOT given the records: otherwise the probes about the missing
-# document and the band could be answered by looking the applicant up, and they
-# would stop measuring what the conversation memory kept.
 ASSISTANT_SYSTEM = f"""You are the assistant of a university grant office, talking to one applicant.
 
 The grant rule: {POLICY['rule_human']}
@@ -101,14 +80,13 @@ def call_model(client, model, messages, json_mode=False):
 
 
 class Session:
-    """One conversation. `history` is what gets resent; `state` replaces it after compress."""
 
     def __init__(self, client, model):
         self.client = client
         self.model = model
         self.history: list[dict] = []
         self.state: dict | None = None
-        self.log: list[dict] = []        # one entry per call, for the tables
+        self.log: list[dict] = []
         self.last_usage: dict | None = None
 
     def messages(self) -> list[dict]:
@@ -133,7 +111,6 @@ class Session:
         return reply
 
     def ask_without_remembering(self, text: str):
-        """Probe: ask from the current memory, but do not add the probe to it."""
         saved = copy.deepcopy(self.history)
         try:
             reply = self.say(text, kind="probe")
@@ -142,7 +119,6 @@ class Session:
         return reply, self.log[-1]
 
     def compress(self) -> tuple[bool, str]:
-        """Summarise into a state object. Only replace history if it validates."""
         transcript = []
         if self.state is not None:
             transcript.append("EARLIER STATE: " + json.dumps(self.state, ensure_ascii=False))
@@ -174,12 +150,7 @@ class Session:
         return True, f"compressed: {dropped} messages replaced by the state object"
 
 
-# --------------------------------------------------------------------------
-# Probe checking
-# --------------------------------------------------------------------------
 def retrieved(answer: str, expect_contains: list[str]) -> tuple[bool, str | None]:
-    """Any one of the expected strings counts. Case-insensitive; digit groups
-    written with spaces or commas ("150 000") are normalised too."""
     low = answer.lower()
     squashed = re.sub(r"(?<=\d)[\s,.  ](?=\d{3})", "", low)
     for s in expect_contains:
@@ -189,9 +160,6 @@ def retrieved(answer: str, expect_contains: list[str]) -> tuple[bool, str | None
     return False, None
 
 
-# --------------------------------------------------------------------------
-# Scripted run
-# --------------------------------------------------------------------------
 def scripted_run(client, model, script, do_compress: bool):
     s = Session(client, model)
     compress_note = None
@@ -279,9 +247,6 @@ def run_scripted(client, model):
     print(f"\nFull transcripts saved to {out.relative_to(ROOT)}")
 
 
-# --------------------------------------------------------------------------
-# Interactive
-# --------------------------------------------------------------------------
 HELP = ("commands: compress | tokens (what the last call cost) | state | "
         "history | help | quit")
 

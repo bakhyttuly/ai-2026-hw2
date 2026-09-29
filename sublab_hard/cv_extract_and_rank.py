@@ -1,16 +1,3 @@
-"""Sublab Hard - stories in, CVs out, the best candidate by code.
-
-    python -m sublab_hard.cv_extract_and_rank
-
-1. Extract a structured CV from each story in data/candidates/ (the counting
-   rules are IN the extraction prompt), validate it against CV_SCHEMA.
-2. Ask the model for a 0-5 score per rubric criterion - only the three scores.
-3. Compute the weighted total and the winner here, in code.
-4. Separately, ask the model in prose who should win, for comparison.
-
-Prints the Markdown tables for SUBMISSION.md and writes everything to
-outputs/hard_results.json.
-"""
 from __future__ import annotations
 
 import argparse
@@ -33,9 +20,6 @@ WEIGHTS = {c["id"]: c["weight"] for c in RUBRIC["criteria"]}
 CRITERIA = list(WEIGHTS)
 PUBLISHED_STATUSES = {"published", "accepted"}
 
-# --------------------------------------------------------------------------
-# The CV record
-# --------------------------------------------------------------------------
 NULLABLE_STR = {"type": ["string", "null"]}
 EVIDENCE = {"type": ["string", "null"],
             "description": "verbatim quote from the story, or null"}
@@ -142,9 +126,6 @@ SCORE_SCHEMA = {
 }
 SCORE_VALIDATOR = Draft202012Validator(SCORE_SCHEMA)
 
-# --------------------------------------------------------------------------
-# Prompts - the counting rules live HERE, not in my head.
-# --------------------------------------------------------------------------
 EXTRACT_SYSTEM = f"""You extract a structured CV from a scholarship candidate's written story.
 Reply with ONE JSON object only (no markdown, no prose) matching this JSON Schema:
 {json.dumps(CV_SCHEMA, ensure_ascii=False)}
@@ -200,7 +181,6 @@ candidates. Read the rubric and the six written applications, and answer in
 prose: which candidate should win, and why? Name the runner-up too."""
 
 
-# --------------------------------------------------------------------------
 def call_model(client, model, system, user, json_mode=True):
     kwargs = dict(model=model, messages=[{"role": "system", "content": system},
                                          {"role": "user", "content": user}])
@@ -232,16 +212,12 @@ def load_stories():
             for p in sorted((DATA / "candidates").glob("story-*.md"))}
 
 
-# --------------------------------------------------------------------------
-# Checks the CODE makes on the model's extraction
-# --------------------------------------------------------------------------
 TOP_LEVEL_NULLABLE = ["full_name", "degree", "graduation_year", "gpa_4_scale",
                       "gpa_original", "gpa_original_scale",
                       "published_peer_reviewed_count", "experience_months_countable"]
 
 
 def code_checks(cv: dict) -> list[str]:
-    """Recompute what can be recomputed; report disagreements with the model."""
     notes = []
     orig, scale, g4 = cv.get("gpa_original"), cv.get("gpa_original_scale"), cv.get("gpa_4_scale")
     if orig is not None and scale:
@@ -280,7 +256,6 @@ def traps_hit(cv: dict) -> list[str]:
     return traps or ["none"]
 
 
-# --------------------------------------------------------------------------
 def weighted_total(scores: dict) -> float:
     return round(sum(WEIGHTS[c] * scores[c] for c in CRITERIA), 2)
 
@@ -300,7 +275,6 @@ def main():
         tokens[0] += t[0] or 0
         tokens[1] += t[1] or 0
 
-    # ---- Part 1: extraction -------------------------------------------------
     cvs, extraction = {}, {}
     for sid, text in stories.items():
         print(f"extracting {sid} ...", file=sys.stderr)
@@ -347,7 +321,6 @@ def main():
               if extraction["story-06"]["cv"] else extraction["story-06"]["raw"])
         print("```")
 
-    # ---- Part 2: scores (model) and ranking (code) -----------------------------
     scores = {}
     for sid, cv in cvs.items():
         print(f"scoring {sid} ...", file=sys.stderr)
@@ -395,7 +368,6 @@ def main():
             print(f"Gap between #1 and #2: {gap:.2f}"
                   + ("  <-- within 0.05: too close to call on these scores" if gap <= 0.05 else ""))
 
-    # ---- Prose, separate call ---------------------------------------------------
     print("\nasking for the prose recommendation ...", file=sys.stderr)
     stories_block = "\n\n".join(f"===== {sid} =====\n{text}" for sid, text in stories.items())
     prose, t = call_model(client, args.model, PROSE_SYSTEM,
