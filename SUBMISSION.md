@@ -23,31 +23,41 @@ whether it agrees with `expected` in `data/enquiries.json`:
 
 | Enquiry | policy_officer | front_desk | auditor | bilingual_clerk |
 |---|---|---|---|---|
-| E-01 | | | | |
-| E-02 | | | | |
-| E-03 | | | | |
-| E-04 | | | | |
-| E-05 | | | | |
-| E-06 | | | | |
-| E-07 | | | | |
-| E-08 | | | | |
-| E-09 | | | | |
-| E-10 | | | | |
-| **agrees with `expected`** | /10 | /10 | /10 | /10 |
-| **parsed** | /10 | /10 | /10 | /10 |
-| **schema-valid** | /10 | /10 | /10 | /10 |
+| E-01 | granted ✓ | granted ✓ | granted ✓ | granted ✓ |
+| E-02 | more_info ✓ | more_info ✓ | more_info ✓ | more_info ✓ |
+| E-03 | refused ✓ | more_info ✗ | refused ✓ | refused ✓ |
+| E-04 | refused ✓ | more_info ✗ | refused ✓ | refused ✓ |
+| E-05 | granted ✓ | granted ✓ | granted ✓ | granted ✓ |
+| E-06 | granted ✓ | granted ✓ | granted ✓ | granted ✓ |
+| E-07 | granted ✓ | granted ✓ | granted ✓ | granted ✓ |
+| E-08 | not_found ✓ | not_found ✓ | not_found ✓ | not_found ✓ |
+| E-09 | refused ✓ | more_info ✗ | refused ✓ | refused ✓ |
+| E-10 | more_info ✓ | more_info ✓ | more_info ✓ | more_info ✓ |
+| **agrees with `expected`** | 10/10 | 7/10 | 10/10 | 10/10 |
+| **parsed** | 10/10 | 10/10 | 10/10 | 10/10 |
+| **schema-valid** | 10/10 | 10/10 | 10/10 | 10/10 |
 
 ### Which field moved, on which enquiry, under which role
 
 | Field | Enquiries that moved | Role(s) that moved it |
 |---|---|---|
-| `found` | | |
-| `decision` | | |
-| `amount` | | |
-| `missing_documents` | | |
+| `found` | none — moved on no enquiry | none |
+| `decision` | E-03, E-04, E-09 (refused → more_info) | front_desk |
+| `amount` | none — moved on no enquiry | none |
+| `missing_documents` | none — moved on no enquiry | none |
 
 Fields that moved on no enquiry: say so explicitly rather than leaving the row
 out.
+
+`found`, `amount` and `missing_documents` moved on no enquiry under any role.
+The auditor moved nothing (10/10 identical to the policy officer). The
+bilingual clerk moved no structured field; only `reason` differs. `reason` on
+E-07 came back in Kazakh under all four roles, not only the bilingual clerk.
+
+Model `gpt-5.6-luna`, JSON mode on. Run 2 of 2: in run 1 the shared part of the
+system prompt defined `refused`/`granted` in terms of the rule, and all four
+roles returned identical decisions on all ten enquiries (40/40 agree). Run 2
+removed that from the shared block; the tables above are run 2.
 
 ### Raw replies
 
