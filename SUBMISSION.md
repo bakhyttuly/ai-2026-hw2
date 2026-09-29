@@ -109,35 +109,76 @@ made of, and what you would put in code — not in the prompt — if a wrong
 
 | Call | A — never compressed | B — compressed at the `compress` turn |
 |---|---|---|
-| 1 | | |
-| 2 | | |
-| 3 | | |
-| 4 | | |
-| 5 | | |
-| 6 | | |
-| 7 | | |
-| 8 | | |
-| 9 | | |
-| 10 | | |
-| 11 | | |
-| 12 | | |
-| **peak** | | |
-| **total for the run** | | |
+| 1 | 249 | 249 |
+| 2 | 297 | 310 |
+| 3 | 356 | 363 |
+| 4 | 405 | 434 |
+| 5 | 450 | 480 |
+| 6 | 522 | 539 |
+| 7 | 593 | 609 |
+| 8 | 652 | 674 |
+| 9 | 708 | 739 |
+| 10 | 757 | 609 (after compress) |
+| 11 | 815 | 656 (after compress) |
+| 12 | — | — |
+| **peak** | 815 | 739 |
+| **total for the run** | 5804 | 5662 (6851 incl. the compress call) |
+
+Prompt tokens per call, model `gpt-5.6-luna`. The script has twelve entries,
+one of which is `<compress>`, so each run sends eleven applicant turns; row 12
+is empty in both. The compress call itself (run B only) sent 1189 prompt
+tokens and got 692 back; it is not one of the eleven. B's calls 2–9 are higher
+than A's even though nothing was compressed yet: the assistant's replies
+differ between runs, and they are resent too.
 
 ### Probes after the conversation
 
 | Probe | Tests | A retrieved? | A answer | B retrieved? | B answer |
 |---|---|---|---|---|---|
-| Q-1 identity | turn 1 | | | | |
-| Q-2 missing document | turn 5 | | | | |
-| Q-3 band and amount | turns 3–4 | | | | |
-| Q-4 the constraint | turn 6 | | | | |
-| Q-5 the open question | turn 7 | | | | |
-| **retrieved** | | /5 | | /5 | |
+| Q-1 identity | turn 1 | yes | You are Daniyar Qoshan, applicant A-202. | yes | You are Daniyar Qoshan, applicant **A-202**. |
+| Q-2 missing document | turn 5 | yes | Based on what you told me, your ID card has not been uploaded. I cannot verify the file r… | yes | Your **ID card** is still missing from your file. |
+| Q-3 band and amount | turns 3–4 | yes | I cannot verify your income band from the records. If it is band 2 and you meet all requi… | yes | Your stated income band is 2. If you qualify, the grant amount would be **150,000 tenge**. |
+| Q-4 the constraint | turn 6 | yes | You said you can come to the office on Thursdays. | yes | You can come to the office on **Thursday**. |
+| Q-5 the open question | turn 7 | yes | You asked whether a scanned letter from your employer would count or whether the original… | yes | You asked whether a scanned letter from your employer would be accepted or whether the or… |
+| **retrieved** | | 5/5 | | 5/5 | |
 
 ### The state my compression produced
 
+It parsed and validated against `data/memory_state.schema.json` on the first try, and replaced 18 messages (9 turns + 9 replies).
+
 ```json
+{
+  "applicant_id": "A-202",
+  "topic": "Study grant eligibility and document submission",
+  "facts": [
+    "name is Daniyar Qoshan",
+    "sent my transcript last week",
+    "income band is 2",
+    "my family's certificate says so",
+    "could not upload my id card because the scanner at home broke",
+    "have lab all week otherwise",
+    "sister Aruzhan applied last year and she is on file too"
+  ],
+  "decisions": [
+    "Eligibility cannot be determined from the information provided.",
+    "If the applicant qualifies under income band 2, the grant amount is 150,000 tenge.",
+    "Eligibility depends on a verified GPA of at least 2.67, income band 2, and both required documents being on file.",
+    "If the id card is not on file, the applicant would not qualify until it is submitted and recorded.",
+    "The id card can be brought to the office on Thursday for submission and verification.",
+    "The grant rule does not specify whether a scanned employer letter or the original is required.",
+    "A same-day decision cannot be confirmed; processing time is not specified.",
+    "Aruzhan's application does not affect the applicant's eligibility."
+  ],
+  "constraints": [
+    "can only come to the office on Thursdays"
+  ],
+  "open_questions": [
+    "Does the applicant qualify for the study grant?",
+    "Does a scanned letter from the employer count, or is the original required?",
+    "If the applicant brings the id card on Thursday, will the decision be made the same day?"
+  ],
+  "language": "Kazakh and English"
+}
 ```
 
 ### Written answers
